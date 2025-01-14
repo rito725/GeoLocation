@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Data</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .filter-buttons {
+            margin-bottom: 20px;
+        }
+        .filter-buttons button {
+            margin-right: 10px;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .location-input {
+            margin-bottom: 20px;
+        }
+        .location-input input {
+            padding: 10px;
+            width: 300px;
+            margin-right: 10px;
+        }
+    </style>
+    <script>
+        function applyFilter(distance) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    window.location.href = `/?lat=${lat}&lng=${lng}&distance=${distance}`;
+                }, function(error) {
+                    alert('Geolocation failed. Please allow location access.');
+                });
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        }
+
+        async function applyAddressFilter(distance) {
+            const address = document.getElementById('addressInput').value;
+            if (address) {
+                try {
+                    const response = await fetch(`/geocode?address=${address}`);
+                    const data = await response.json();
+                    if (data.latitude && data.longitude) {
+                        window.location.href = `/?lat=${data.latitude}&lng=${data.longitude}&distance=${distance}`;
+                    } else {
+                        alert('Address or ZIP code not found.');
+                    }
+                } catch (error) {
+                    alert('Error fetching address coordinates.');
+                }
+            } else {
+                alert('Please enter an address.');
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Customer Data with Coordinates</h1>
+    
+    <div class="location-input">
+        <input type="text" id="addressInput" placeholder="Enter address or ZIP code">
+        <button onclick="applyAddressFilter(5)">Search by Address (5 km)</button>
+        <button onclick="applyAddressFilter(10)">Search by Address (10 km)</button>
+        <button onclick="applyAddressFilter(50)">Search by Address (50 km)</button>
+        <button onclick="applyAddressFilter(100)">Search by Address (100 km)</button>
+        <button onclick="applyAddressFilter(300)">Search by Address (300 km)</button>
+        <button onclick="applyAddressFilter(500)">Search by Address (500 km)</button>
+    </div>
+
+    <div class="filter-buttons">
+        <button onclick="applyFilter(5)">5 km</button>
+        <button onclick="applyFilter(10)">10 km</button>
+        <button onclick="applyFilter(50)">50 km</button>
+        <button onclick="applyFilter(100)">100 km</button>
+        <button onclick="applyFilter(300)">300 km</button>
+        <button onclick="applyFilter(500)">500 km</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <% if (customers.length > 0) { %>
+                    <% Object.keys(customers[0]).forEach(column => { %>
+                        <% if (column !== 'latitude' && column !== 'longitude') { %>  
+                            <th><%= column %></th>
+                        <% } %>
+                    <% }); %>
+                    <th>Latitude</th>  
+                    <th>Longitude</th>
+                <% } else { %>
+                    <th>No Data Available</th>
+                <% } %>
+            </tr>
+        </thead>
+        
+        <tbody>
+            <% customers.forEach(customer => { %>
+                <tr>
+                    <% Object.keys(customer).forEach(key => { %>
+                        <% if (key !== 'latitude' && key !== 'longitude') { %> 
+                            <td><%= customer[key] %></td>
+                        <% } %>
+                    <% }); %>
+                    <td><%= customer.latitude || 'N/A' %></td> 
+                    <td><%= customer.longitude || 'N/A' %></td> 
+                </tr>
+            <% }); %>
+        </tbody>
+        
+    </table>
+</body>
+</html>
